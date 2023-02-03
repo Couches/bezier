@@ -1,26 +1,107 @@
+// HTML Elements
 const container = document.getElementById("container");
 const createButton = document.getElementById("create-point");
 const itemCounter = document.getElementById("item-count");
 const pointList = document.getElementById("point-list");
 
-const curves = [];
+// Global Variables
+const POINT_RADIUS = 7;
+
 
 var numPoints = 0;
+var pointListElements = [];
 var points = [];
 
-// Point Object
+// Point Definition
 // Contains x and y position
 class Point {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.element = createListPoint(x, y, this);
+        this.createSVG();
+
+        pointList.appendChild(this.element);
+        
+        updateCounter();
     }
 
+    // Point Getters
     getX() { return this.x; }
     getY() { return this.y; }
 
-    toString() { return `${this.x} ${this.y}` }
+    // Point Setters
+    setX(x) { 
+        this.x = x;
+        this.update();
+    }
+
+    setY(y) {
+        this.y = y;
+        this.update();
+    }
+
+    // Remove Point
+    remove() {
+        this.element.remove();
+        this.pointSVG.remove();
+        updateCounter();
+    }
+
+    createSVG()
+    {
+        this.pointSVG = createSVG('circle');
+        
+        setAttributeList(this.pointSVG, {
+            r: POINT_RADIUS,
+            fill: 'black'
+        })
+
+        container.appendChild(this.pointSVG);
+        this.update();
+    }
+
+    update()
+    {
+        setAttributeList(this.pointSVG, {
+            cx: this.x,
+            cy: this.y,
+        })
+    }
+
+    // Returns point information in string form
+    toString() { return `{x: ${this.x}, y: ${this.y}}` }
 }
+
+// Path Definition
+// Contains list of points to draw curves
+class Path {
+    constructor()
+    {
+        this.pathPoints = [];
+    }
+
+    add(p) {
+        this.pathPoints.push(p);
+    }
+
+    remove(p) {
+        this.pathPoints.splice(this.pathPoints.indexOf(p), 1);
+    }
+
+    toString()
+    {
+        let string = "";
+
+        for (let i = 0; i < this.pathPoints.length; i++)
+        {
+            string += (this.pathPoints[i] + ", ");
+        }
+
+        return string;
+    }
+}
+
 
 // Set Attribute List
 // Sets attributes of an element with a map of properties
@@ -31,12 +112,13 @@ function setAttributeList(element, props)
     })
 }
 
+
 // Create List Point
 // Creates an HTML element containing information about its respective point
-function createListPoint(x, y)
+function createListPoint(x, y, point)
 {
     // Generate list item components
-    let div = document.createElement('div');
+    let pointContainer = document.createElement('div');
     let pointText = document.createElement('span');
     let inputX = document.createElement('input');
     let inputY = document.createElement('input');
@@ -50,10 +132,11 @@ function createListPoint(x, y)
     }
     if (id >= 26) return;
 
-    div.id = id;
-    div.className = "point-list-item";
+    // Assign attributes of item components
+    pointContainer.id = id;
+    pointContainer.className = "point-list-item";
 
-    pointText.innerText = `point ${String.fromCharCode(parseInt(div.id) + 97)}`;
+    pointText.innerText = `point ${String.fromCharCode(parseInt(pointContainer.id) + 97)}`;
     
     inputX.type = "text";
     inputY.type = "text";
@@ -61,61 +144,35 @@ function createListPoint(x, y)
     inputX.value = x;
     inputY.value = y;
 
+    removeButton.innerText = "🔪";
+
+    // Add event listeners to item components
     inputX.addEventListener("change", () => {
-        console.log(div.id + " " + inputX.value);
+        point.setX(inputX.value);
+        console.log(point.getX());
     })
 
     inputY.addEventListener("change", () => {
-        console.log(div.id + " " + inputY.value);
+        point.setY(inputY.value)
+        console.log(point.getY());
     })
 
-    removeButton.innerText = "🔪";
+    
 
     removeButton.addEventListener("click", () => {
-        deletePoint(div.id);
+        point.remove();
     })
 
-    div.appendChild(pointText);
-    div.appendChild(inputX);
-    div.appendChild(inputY);
-    div.appendChild(removeButton);
-
-    points.push(div);
-    pointList.appendChild(points[points.length - 1]);
-
-    createPointPath(x + id * 10, y + id * 10, id);
-
-    updateCounter();
+    // Append components to the container
+    pointContainer.appendChild(pointText);
+    pointContainer.appendChild(inputX);
+    pointContainer.appendChild(inputY);
+    pointContainer.appendChild(removeButton);
+    
+    return pointContainer;
 }
 
-// Create a circle at x and y, then assign id
-function createPointPath(x, y, id)
-{
-    let circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 
-    text.textContent = `${String.fromCharCode(parseInt(id) + 97)}`;
-
-    setAttributeList(circle, {
-        cx: x,
-        cy: y,
-        r: 6,
-        stroke: 'orange',
-        "stroke-width": '4px',
-        fill: 'transparent',
-        id: 'p' + id
-    });
-
-    setAttributeList(text, {
-        x: x + 5,
-        y: y - 5,
-        "font-size": "13px",
-        id: 't' + id
-    })
-
-    container.appendChild(circle);
-    container.appendChild(text);
-}
 
 // Update Counter
 // Changes the 
@@ -130,34 +187,43 @@ function updateCounter()
     itemCounter.innerText = text;
 }
 
+
+// Returns new point from given x and y coordinates
 function createPoint(x, y)
 {
-    createListPoint(x, y);
+    return new Point(x, y);
 }
 
-// Delete Point
-// Removes point from PointList element and points array
-// and point circle from the svg
-function deletePoint(parentID)
+
+function createSVG(type)
 {
-    let target = document.getElementById(parentID);
-    points.splice(points.indexOf(target), 1);
-    target.remove();
-
-    document.getElementById("p" + parentID).remove();
-    document.getElementById("t" + parentID).remove();
-
-    //console.log(`deleted ${parentID}`);
-    updateCounter();
+    return document.createElementNS('http://www.w3.org/2000/svg', type);
 }
+
+///////////////////// Global code /////////////////////
+
 
 createButton.addEventListener("click", () => {
-    createPoint(100, 100);
+    createPoint(15, 15);
 });
 
-function generatePath()
-{
-    
-}
 
-//curves.push(document.createElementNS('http://www.w3.org/2000/svg', 'path'));
+const point1 = createPoint(15, 5);
+const point2 = createPoint(10, 10);
+const point3 = createPoint(5, 15);
+
+const path1 = new Path();
+
+path1.add(point1);
+path1.add(point2);
+path1.add(point3);
+
+console.log(path1.toString());
+
+point2.setX(35)
+
+console.log(path1.toString());
+
+path1.remove(point2);
+
+console.log(path1.toString());
