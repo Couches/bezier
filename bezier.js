@@ -103,6 +103,12 @@ class Path {
 }
 
 
+// Create random number within range
+function random(min, max)
+{
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
 // Set Attribute List
 // Sets attributes of an element with a map of properties
 function setAttributeList(element, props)
@@ -204,7 +210,7 @@ function createSVG(type)
 
 
 createButton.addEventListener("click", () => {
-    createPoint(15, 15);
+    createPoint(random(0, 500), random(0, 500));
 });
 
 
