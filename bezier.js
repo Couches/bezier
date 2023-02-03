@@ -1,12 +1,12 @@
 // HTML Elements
 const container = document.getElementById("container");
-const createButton = document.getElementById("create-point");
-const itemCounter = document.getElementById("item-count");
+const createPointButton = document.getElementById("create-point");
+const createPathButton = document.getElementById("create-path");
+const itemCounter = document.getElementById("point-count");
 const pointList = document.getElementById("point-list");
 
 // Global Variables
 const POINT_RADIUS = 7;
-
 
 var numPoints = 0;
 var pointListElements = [];
@@ -140,7 +140,7 @@ function createListPoint(x, y, point)
 
     // Assign attributes of item components
     pointContainer.id = id;
-    pointContainer.className = "point-list-item";
+    pointContainer.className = "list-item";
 
     pointText.innerText = `point ${String.fromCharCode(parseInt(pointContainer.id) + 97)}`;
     
@@ -181,16 +181,32 @@ function createListPoint(x, y, point)
 
 
 // Update Counter
-// Changes the 
+// Changes the counter on create point button 
 function updateCounter()
 {
     numPoints = pointList.childElementCount;
+    createPointButton.classList.remove("disabled");
+
+
     let text;
     if (numPoints > 0 && numPoints < 26) text = numPoints + "/26";
     else if (numPoints <= 0) text = "";
-    else if (numPoints >= 26) text = "MAX"
+    else if (numPoints >= 26)
+    {
+        text = "MAX"
+        createPointButton.classList.add("disabled");
+    }
 
     itemCounter.innerText = text;
+
+    if (numPoints < 2)
+    {
+        createPathButton.classList.add("disabled");
+    }
+    else
+    {
+        createPathButton.classList.remove("disabled");
+    }
 }
 
 
@@ -209,8 +225,8 @@ function createSVG(type)
 ///////////////////// Global code /////////////////////
 
 
-createButton.addEventListener("click", () => {
-    createPoint(random(0, 500), random(0, 500));
+createPointButton.addEventListener("click", () => {
+    if (numPoints < 26) createPoint(random(50, 450), random(50, 450));
 });
 
 

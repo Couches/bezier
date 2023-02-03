@@ -13,14 +13,17 @@
 body {
     background: rgb(243, 243, 243);
     display: flex;
+    align-items: center;
+    justify-content: center;
     height: 100vh;
 }
 
-#point-menu {
+#menu {
     /* Spacing */
-    padding: 4px 12px 12px 4px;
+    padding: 12px;
 
     margin: 12px;
+    margin-top: 0px;
 
     /* Dimension */
     width: fit-content;
@@ -31,13 +34,15 @@ body {
     border-radius: 16px;
 }
 
+.menu-container {
+    height: 500px;
+}
+
 /* Create Point Button Styles */
-#create-point {
+.create-button {
     /* Spacing */
     padding: 4px;
     padding-top: 6px;
-    margin-top: 8px;
-    margin-left: 8px;
 
     /* Dimension */
     width: 215px;
@@ -57,8 +62,12 @@ body {
     color: rgb(130, 195, 255);
 }
 
+#create-point.disabled > span {
+    color: rgb(144, 144, 144);
+}
+
 /* Point List Styles */
-.point-list-item {
+.list-item {
     /* Spacing */
     display: flex;
     align-items: center;
@@ -70,11 +79,12 @@ body {
     font-size: 12px;
 }
 
-.point-list-item > span {
+.list-item > span {
     width: 50px;
+    cursor: default;
 }
 
-.point-list-item > input {
+.list-item > input {
     /* Spacing */
     padding: 2px;
     padding-bottom: 0px;
@@ -88,7 +98,7 @@ body {
     border-radius: 4px;
 }
 
-.point-list-item > button {
+.list-item > button {
     /* Style */
     border: none;
     background: none;
@@ -101,25 +111,25 @@ body {
     transform: scale(-1, 1);
 }
 
-.point-list-item > button:hover {
+.list-item > button:hover {
     /*filter: drop-shadow(0px 0px 2px rgb(255, 0, 0));*/
     transform: rotate(45deg) scale(-1.2, 1.2);
 }
 
 /* SVG Styles */
 #container {
-    margin: 12px 16px 12px 0px;
-
     /* Dimension */
-    box-sizing: border-box;
-    width: 100%;
-    height: auto;
-    max-width: 500px;
-    max-height: 500px;
+    width: 500px;
+    height: 500px;
 
     /* Style */
     z-index: 5;
 
     background: white;
     border-radius: 16px;
+}
+
+.disabled {
+    background: lightgray;
+    cursor: not-allowed;
 }

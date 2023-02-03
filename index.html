@@ -8,14 +8,23 @@
     <title>Document</title>
 </head>
 <body>
-    <div id="point-menu">
-        <button id="create-point">create point ✏️ <span id="item-count"></span></button>
-        <div id="point-list"></div>
+    <div class="menu-container">
+        <div id="menu">
+            <button class="create-button" id="create-point">create point ✏️ <span id="point-count"></span></button>
+            <div class="list" id="point-list"></div>
+        </div>
     </div>
     
     <svg id="container" viewbox="0 0 500 500">
 
     </svg>
+
+    <div class="menu-container">
+        <div id="menu">
+            <button class="create-button disabled" id="create-path">create path ✏️ <span id="item-count"></span></button>
+            <div class="list" id="path-list"></div>
+        </div>
+    </div>
 
     <script src="bezier.js"></script>
 </body>
