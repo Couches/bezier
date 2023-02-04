@@ -1,14 +1,20 @@
 // HTML Elements
 const container = document.getElementById("container");
+
 const createPointButton = document.getElementById("create-point");
 const createPathButton = document.getElementById("create-path");
-const itemCounter = document.getElementById("point-count");
+
+const pointCounter = document.getElementById("point-count");
+const pathCounter = document.getElementById("path-count");
+
 const pointList = document.getElementById("point-list");
+const pathList = document.getElementById("path-list");
 
 // Global Variables
 const POINT_RADIUS = 7;
 
 var numPoints = 0;
+var numPaths = 0;
 var pointListElements = [];
 var points = [];
 
@@ -18,9 +24,8 @@ class Point {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.element = createListPoint(x, y, this);
+        this.element = createListPoint(this);
         this.createSVG();
-
         pointList.appendChild(this.element);
         
         updateCounter();
@@ -54,7 +59,7 @@ class Point {
         
         setAttributeList(this.pointSVG, {
             r: POINT_RADIUS,
-            fill: 'black'
+            fill: this.color
         })
 
         container.appendChild(this.pointSVG);
@@ -79,14 +84,25 @@ class Path {
     constructor()
     {
         this.pathPoints = [];
+        this.element = createListPath(this);
+        pathList.appendChild(this.element);
+        console.log("created");
+
+        updateCounter();
     }
 
-    add(p) {
-        this.pathPoints.push(p);
+    addPoint(point) {
+        this.pathPoints.push(point);
     }
 
-    remove(p) {
-        this.pathPoints.splice(this.pathPoints.indexOf(p), 1);
+    removePoint(point) {
+        this.pathPoints.splice(this.pathPoints.indexOf(point), 1);
+    }
+
+    remove()
+    {
+        this.element.remove();
+        updateCounter();
     }
 
     toString()
@@ -118,39 +134,76 @@ function setAttributeList(element, props)
     })
 }
 
+function createRemoveButton(element)
+{
+    let removeButton = document.createElement('button');  
+
+    removeButton.innerText = "🔪";
+    removeButton.className = "remove-button";
+
+    removeButton.addEventListener("click", () => {
+        element.remove();
+    })
+
+    return removeButton;
+}
+
+function createListPath(path)
+{
+    let pathContainer = document.createElement('div');
+    let pathText = document.createElement('span');
+    
+    
+    // Find an ID for the item
+    let pathID = 0;
+    
+    while (document.getElementById(`path${pathID}`) != null)
+    {
+        pathID++;
+    }
+    if (pathID >= 5) return;
+
+    pathContainer.id = `path${pathID}`;
+    pathContainer.className = "list-item path-list-item";
+
+    pathText.innerText = `path ${String.fromCharCode(parseInt(pathID) + 97).toUpperCase()}`
+
+
+    pathContainer.appendChild(pathText);
+    pathContainer.appendChild(createRemoveButton(path))
+
+    return pathContainer;
+}
 
 // Create List Point
 // Creates an HTML element containing information about its respective point
-function createListPoint(x, y, point)
+function createListPoint(point)
 {
     // Generate list item components
     let pointContainer = document.createElement('div');
     let pointText = document.createElement('span');
     let inputX = document.createElement('input');
     let inputY = document.createElement('input');
-    let removeButton = document.createElement('button');
 
     // Find an ID for the item
     let id = 0;
-    while (document.getElementById(`${id}`) != null)
+    while (document.getElementById(`point${id}`) != null)
     {
         id++;
     }
     if (id >= 26) return;
 
     // Assign attributes of item components
-    pointContainer.id = id;
-    pointContainer.className = "list-item";
+    pointContainer.id = `point${id}`;
+    pointContainer.className = "list-item point-list-item";
 
-    pointText.innerText = `point ${String.fromCharCode(parseInt(pointContainer.id) + 97)}`;
+    pointText.innerText = `point ${String.fromCharCode(parseInt(id) + 97).toUpperCase()}`;
     
     inputX.type = "text";
     inputY.type = "text";
 
-    inputX.value = x;
-    inputY.value = y;
-
-    removeButton.innerText = "🔪";
+    inputX.value = point.getX();
+    inputY.value = point.getY();
 
     // Add event listeners to item components
     inputX.addEventListener("change", () => {
@@ -163,17 +216,12 @@ function createListPoint(x, y, point)
         console.log(point.getY());
     })
 
-    
-
-    removeButton.addEventListener("click", () => {
-        point.remove();
-    })
 
     // Append components to the container
     pointContainer.appendChild(pointText);
     pointContainer.appendChild(inputX);
     pointContainer.appendChild(inputY);
-    pointContainer.appendChild(removeButton);
+    pointContainer.appendChild(createRemoveButton(point));
     
     return pointContainer;
 }
@@ -185,28 +233,35 @@ function createListPoint(x, y, point)
 function updateCounter()
 {
     numPoints = pointList.childElementCount;
+    numPaths = pathList.childElementCount;
     createPointButton.classList.remove("disabled");
 
-
-    let text;
-    if (numPoints > 0 && numPoints < 26) text = numPoints + "/26";
-    else if (numPoints <= 0) text = "";
-    else if (numPoints >= 26)
+    // Point Counter Code
+    let pointCounterText;
+    if (numPoints > 0 && numPoints < 10) pointCounterText = numPoints + "/10";
+    else if (numPoints <= 0) pointCounterText = "";
+    else if (numPoints >= 10)
     {
-        text = "MAX"
+        pointCounterText = "MAX"
         createPointButton.classList.add("disabled");
     }
 
-    itemCounter.innerText = text;
+    pointCounter.innerText = pointCounterText;
 
-    if (numPoints < 2)
+    // Path Counter Code
+    let pathCounterText;
+    if (numPaths > 0 && numPaths < 5) pathCounterText = numPaths + "/5";
+    else if (numPaths <= 0) pathCounterText = "";
+    else if (numPaths >= 5)
     {
+        pathCounterText = "MAX"
         createPathButton.classList.add("disabled");
     }
-    else
-    {
-        createPathButton.classList.remove("disabled");
-    }
+
+    pathCounter.innerText = pathCounterText;
+
+    if (numPoints < 2 || numPaths >= 5) createPathButton.classList.add("disabled"); 
+    else createPathButton.classList.remove("disabled");
 }
 
 
@@ -214,6 +269,11 @@ function updateCounter()
 function createPoint(x, y)
 {
     return new Point(x, y);
+}
+
+function createPath()
+{
+    return new Path();
 }
 
 
@@ -226,26 +286,10 @@ function createSVG(type)
 
 
 createPointButton.addEventListener("click", () => {
-    if (numPoints < 26) createPoint(random(50, 450), random(50, 450));
+    if (numPoints < 10) createPoint(random(50, 450), random(50, 450));
 });
 
-
-const point1 = createPoint(15, 5);
-const point2 = createPoint(10, 10);
-const point3 = createPoint(5, 15);
-
-const path1 = new Path();
-
-path1.add(point1);
-path1.add(point2);
-path1.add(point3);
-
-console.log(path1.toString());
-
-point2.setX(35)
-
-console.log(path1.toString());
-
-path1.remove(point2);
-
-console.log(path1.toString());
+createPathButton.addEventListener("click", () => {
+   
+    if (numPoints >= 2 && numPaths < 5) createPath();
+})
