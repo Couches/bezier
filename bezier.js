@@ -18,6 +18,8 @@ var numPaths = 0;
 var pointListElements = [];
 var points = [];
 
+var activeDropdown;
+
 // Point Definition
 // Contains x and y position
 class Point {
@@ -85,14 +87,16 @@ class Path {
     {
         this.pathPoints = [];
         this.element = createListPath(this);
+        this.listElement = document.createElement('div');
         pathList.appendChild(this.element);
-        console.log("created");
 
         updateCounter();
     }
 
     addPoint(point) {
-        this.pathPoints.push(point);
+        //this.pathPoints.push(point);
+
+        this.createPointItem();
     }
 
     removePoint(point) {
@@ -103,6 +107,49 @@ class Path {
     {
         this.element.remove();
         updateCounter();
+    }
+
+    closeDropdown()
+    {
+        this.element.querySelector("#dropdown-menu").remove();
+        this.element.querySelector(".dropdown-button").innerText = "▸";
+    }
+
+    openDropdown()
+    {
+
+        this.element.appendChild(createDropdown(this));
+        this.element.querySelector(".dropdown-button").innerText = "▾";
+
+    }
+
+    createPointItem()
+    {
+        let pointItem = document.createElement('div');
+        let pointInputID = document.createElement('input');
+
+        pointItem.className = "path-point-item";
+        pointItem.innerText = "point: ";
+
+        pointInputID.type = "text";
+        pointInputID.className = "input";
+
+        pointItem.appendChild(pointInputID);
+
+        pointItem.appendChild(createRemoveButton(pointItem));
+
+        this.listElement.appendChild(pointItem);
+
+    }
+
+    getPoints()
+    {
+        return this.pathPoints;
+    }
+
+    getListElement()
+    {
+        return this.listElement;
     }
 
     toString()
@@ -134,11 +181,12 @@ function setAttributeList(element, props)
     })
 }
 
+// Create a remove button
 function createRemoveButton(element)
 {
     let removeButton = document.createElement('button');  
 
-    removeButton.innerText = "🔪";
+    removeButton.innerText = "✕";
     removeButton.className = "remove-button";
 
     removeButton.addEventListener("click", () => {
@@ -148,31 +196,84 @@ function createRemoveButton(element)
     return removeButton;
 }
 
+function createDropdown(path)
+{
+    let dropdownMenu = document.createElement('div');
+    let addPointButton = document.createElement('button');
+
+    dropdownMenu.id = "dropdown-menu";
+
+    addPointButton.className = "add-point-button input";
+    addPointButton.innerText = "＋";
+
+    dropdownMenu.appendChild(addPointButton);
+    dropdownMenu.appendChild(path.getListElement());
+
+    addPointButton.addEventListener("click", () => {
+        path.addPoint();
+    })
+
+    
+
+    return dropdownMenu;
+}
+
+// Open and Close dropdowns
+function setActiveDropdown(path)
+{
+    if (activeDropdown == path)
+    {
+        path.closeDropdown();
+        activeDropdown = null;
+        return;
+    }
+    else if (activeDropdown != null)
+    {
+        activeDropdown.closeDropdown();
+    }
+    if (activeDropdown != path) activeDropdown = path;
+    activeDropdown.openDropdown();
+
+
+    return activeDropdown;
+}
+
 function createListPath(path)
 {
+    let listItemContainer = document.createElement('div');
     let pathContainer = document.createElement('div');
     let pathText = document.createElement('span');
+    let dropdownButton = document.createElement('button');
     
     
     // Find an ID for the item
-    let pathID = 0;
+    let id = 0;
     
-    while (document.getElementById(`path${pathID}`) != null)
+    while (document.getElementById(`path${id}`) != null)
     {
-        pathID++;
+        id++;
     }
-    if (pathID >= 5) return;
+    if (id >= 5) return;
 
-    pathContainer.id = `path${pathID}`;
+    listItemContainer.id = `path${id}`;
     pathContainer.className = "list-item path-list-item";
 
-    pathText.innerText = `path ${String.fromCharCode(parseInt(pathID) + 97).toUpperCase()}`
+    pathText.innerText = `path ${id}`
 
+    dropdownButton.innerText = "▸"
+    dropdownButton.className = "dropdown-button input"
+
+    dropdownButton.addEventListener("click", () => {
+        setActiveDropdown(path)
+    });
 
     pathContainer.appendChild(pathText);
+    pathContainer.appendChild(dropdownButton);
     pathContainer.appendChild(createRemoveButton(path))
 
-    return pathContainer;
+    listItemContainer.appendChild(pathContainer);
+
+    return listItemContainer;
 }
 
 // Create List Point
@@ -197,10 +298,13 @@ function createListPoint(point)
     pointContainer.id = `point${id}`;
     pointContainer.className = "list-item point-list-item";
 
-    pointText.innerText = `point ${String.fromCharCode(parseInt(id) + 97).toUpperCase()}`;
+    pointText.innerText = `point ${id}`;
     
     inputX.type = "text";
     inputY.type = "text";
+
+    inputX.className = "input";
+    inputY.className = "input";
 
     inputX.value = point.getX();
     inputY.value = point.getY();
@@ -227,7 +331,6 @@ function createListPoint(point)
 }
 
 
-
 // Update Counter
 // Changes the counter on create point button 
 function updateCounter()
@@ -236,34 +339,27 @@ function updateCounter()
     numPaths = pathList.childElementCount;
     createPointButton.classList.remove("disabled");
 
-    // Point Counter Code
-    let pointCounterText;
-    if (numPoints > 0 && numPoints < 10) pointCounterText = numPoints + "/10";
-    else if (numPoints <= 0) pointCounterText = "";
-    else if (numPoints >= 10)
-    {
-        pointCounterText = "MAX"
-        createPointButton.classList.add("disabled");
-    }
+    updateButton(createPointButton, pointCounter, numPoints, 10);
+    updateButton(createPathButton, pathCounter, numPaths, 5);
 
-    pointCounter.innerText = pointCounterText;
-
-    // Path Counter Code
-    let pathCounterText;
-    if (numPaths > 0 && numPaths < 5) pathCounterText = numPaths + "/5";
-    else if (numPaths <= 0) pathCounterText = "";
-    else if (numPaths >= 5)
-    {
-        pathCounterText = "MAX"
-        createPathButton.classList.add("disabled");
-    }
-
-    pathCounter.innerText = pathCounterText;
-
-    if (numPoints < 2 || numPaths >= 5) createPathButton.classList.add("disabled"); 
+    if (numPaths >= 5) createPathButton.classList.add("disabled"); 
     else createPathButton.classList.remove("disabled");
 }
 
+function updateButton(buttonElement, textElement, num, max)
+{
+    let text;
+
+    if (num > 0 && num < max) text = `${num}/${max}`;
+    else if (num <= 0) text = "";
+    else if (num >= max)
+    {
+        text =  "MAX"
+        buttonElement.classList.add("disabled");
+    }
+
+    textElement.innerText = text;
+}
 
 // Returns new point from given x and y coordinates
 function createPoint(x, y)
@@ -275,7 +371,6 @@ function createPath()
 {
     return new Path();
 }
-
 
 function createSVG(type)
 {
@@ -291,5 +386,5 @@ createPointButton.addEventListener("click", () => {
 
 createPathButton.addEventListener("click", () => {
    
-    if (numPoints >= 2 && numPaths < 5) createPath();
+    if (numPaths < 5) createPath();
 })

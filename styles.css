@@ -8,6 +8,7 @@
     margin: 0;
 
     font-family: Proportional-Mono;
+    font-size: 10px;
 }
 
 body {
@@ -32,6 +33,8 @@ body {
     /* Style */
     background: white;
     border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0px 0px 24px rgba(0, 0, 0, 0.1);
 }
 
 .menu-container {
@@ -60,24 +63,17 @@ body {
 
 
 .create-button.point {
-    background: rgb(0, 122, 255);
+    background: linear-gradient(318deg, rgb(0, 123, 255) 0%, rgba(0,173,255,1) 100%);
 }
 
 .create-button.path {
-    background: rgb(255, 149, 0);
+    background: linear-gradient(318deg, rgb(255, 128, 0) 0%, rgb(255, 94, 0) 100%);
 }
+
 
 .create-button.disabled {
     background: lightgray;
     cursor: not-allowed;
-}
-
-#create-point > span {
-    color: rgb(130, 195, 255);
-}
-
-#create-point.disabled > span {
-    color: rgb(144, 144, 144);
 }
 
 /* Point List Styles */
@@ -85,6 +81,7 @@ body {
     /* Spacing */
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     margin-top: 8px;
     margin-left: 10px;
@@ -93,15 +90,16 @@ body {
     font-size: 12px;
 }
 
-.point-list-item > span {
-    width: 50px;
+.list-item > span {
     cursor: default;
+    width: 50px;
 }
 
-.point-list-item > input {
+.input {
     /* Spacing */
     padding: 2px;
     padding-bottom: 0px;
+    text-align: center;
 
     /* Dimension */
     width: 40px;
@@ -111,7 +109,7 @@ body {
     border: 2px solid lightgray;
     border-radius: 4px;
 
-    background: transparent;
+    background: rgba(211, 211, 211, 0.25);
 }
 
 .remove-button {
@@ -120,6 +118,9 @@ body {
     background: none;
     font-size: 16px;
 
+    padding-top: 4px;
+    color: red;
+
     cursor: pointer;
 
     width: 32px;
@@ -127,10 +128,39 @@ body {
 
     transform: scale(-1, 1);
     background: transparent;
+    
+    transition: 0.2s;
 }
 
 .remove-button:hover {
-    text-shadow: 0 0 12px red;
+    text-shadow: 0 0 8px red;
+    transition: 0.2s;
+}
+
+.add-point-button {
+
+    width: 100%;
+
+    font-style: bold;
+    
+    border-color: rgb(76, 217, 100);
+    background:rgba(76, 217, 99, 0.25);
+}
+
+.path-point-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 4px;
+    margin-top: 8px;
+}
+
+#dropdown-menu {
+    box-shadow: 0px 24px 35px -10px rgba(0, 0, 0, 0.1);
+
+    border-radius: 0px 0px 8px 8px;
+
+    padding: 8px;
 }
 
 /* SVG Styles */
@@ -140,10 +170,12 @@ body {
     height: 500px;
 
     /* Style */
-    z-index: 5;
+    z-index: -5;
 
     background: white;
     border-radius: 16px;
+
+    box-shadow: 0px 0px 48px rgba(0, 0, 0, 0.1);
 }
 
 .disabled {
