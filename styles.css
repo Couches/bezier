@@ -3,11 +3,21 @@
     src: url("Proportional-Mono.woff2");
 }
 
+@font-face {
+    font-family: Lato;
+    src: url("Lato-Regular.ttf");
+}
+
+@font-face {
+    font-family: Lato-Bold;
+    src: url("Lato-Bold.ttf");
+}
+
 * {
     padding: 0;
     margin: 0;
 
-    font-family: Proportional-Mono;
+    font-family: Lato;
     font-size: 10px;
 }
 
@@ -46,11 +56,14 @@ body {
     /* Spacing */
     padding: 4px;
     padding-top: 6px;
+    padding-bottom: 8px;
 
     /* Dimension */
     width: 215px;
 
     /* Style */
+    font-family: Lato-Bold;
+
     border: none;
     border-radius: 4px;
 
@@ -98,7 +111,7 @@ body {
 .input {
     /* Spacing */
     padding: 2px;
-    padding-bottom: 0px;
+    padding-bottom: 4px;
     text-align: center;
 
     /* Dimension */
@@ -108,6 +121,8 @@ body {
     border: none;
     border: 2px solid lightgray;
     border-radius: 4px;
+
+    
 
     background: rgba(211, 211, 211, 0.25);
 }
@@ -143,6 +158,9 @@ body {
 
     font-style: bold;
     
+    font-family: Lato-Bold;
+    padding-top: 4px;
+
     border-color: rgb(76, 217, 100);
     background:rgba(76, 217, 99, 0.25);
 }
@@ -160,7 +178,7 @@ body {
 
     border-radius: 0px 0px 8px 8px;
 
-    padding: 8px;
+    padding: 12px;
 }
 
 /* SVG Styles */
