@@ -11,7 +11,7 @@ const pointList = document.getElementById("point-list");
 const pathList = document.getElementById("path-list");
 
 // Global Variables
-const POINT_RADIUS = 7;
+const POINT_RADIUS = 8;
 
 var numPoints = 0;
 var numPaths = 0;
@@ -42,13 +42,13 @@ class Point {
     getY() { return this.y; }
 
     // Point Setters
-    setX(x) { 
-        this.x = clamp(x, 12, 488);
+    setX(x) {
+        this.x = clamp(x, 8, 492);
         this.update();
     }
 
     setY(y) {
-        this.y = clamp(y, 12, 488);
+        this.y = clamp(y, 8, 492);
         this.update();
     }
 
@@ -187,7 +187,7 @@ class Path {
 
 function pickPoint(pathPoint) {
     document.addEventListener("mousedown", function(e) {
-        if (e.target.tagName == "circle") pathPoint = (e.target.id);
+        if (e.target.tagName == "circle") console.log(e.target.id);
     }, {once : true});
 }
 
@@ -206,10 +206,92 @@ function makeDraggable(point)
     
             function moveAt(pageX, pageY)
             {
-                point.setX(pageX - conBCR.left)
-                point.setY(pageY - conBCR.top)
+                let mouseX = pageX - conBCR.left;
+                let mouseY = pageY - conBCR.top;
+                
+                let posX = mouseX;
+                let posY = mouseY;
+
+                let adjustedPos = cornerCurve(mouseX, mouseY, 500, 500, 16);
+                
+                point.setX(adjustedPos.x);
+                point.setY(adjustedPos.y);
             }
     
+            function cornerCurve(mouseX, mouseY, width, height, cornerRadius)
+            {
+
+                let position = {
+                    x: mouseX,
+                    y: mouseY
+                };
+
+                let posX = clamp(mouseX, 0, width);
+                let posY = clamp(mouseY, 0, height);
+
+                let anchorX;
+                let anchorY;
+
+                let adjustCorner = false;
+                let flipAngle = false;
+
+                // Set anchors
+                {
+                    if (posX <= cornerRadius && posY <= cornerRadius)
+                    {
+                        anchorX = cornerRadius;
+                        anchorY = cornerRadius;
+
+                        adjustCorner = true;
+                    }
+
+                    if (posX <= cornerRadius && posY >= height - cornerRadius)
+                    {
+                        anchorX = cornerRadius;
+                        anchorY = height - cornerRadius;
+
+                        adjustCorner = true;
+                    }
+
+                    if (posX >= width - cornerRadius && posY >= height - cornerRadius)
+                    {
+                        anchorX = width - cornerRadius;
+                        anchorY = height - cornerRadius;
+
+                        adjustCorner = true;
+                        flipAngle = true;
+                    }
+
+                    if (posX >= width - cornerRadius && posY <= cornerRadius)
+                    {
+                        anchorX = width - cornerRadius;
+                        anchorY = cornerRadius;
+
+                        adjustCorner = true;
+                        flipAngle = true;
+                    }
+                }
+
+                if (adjustCorner)
+                {
+                    let diffX = mouseX - anchorX;
+                    let diffY = mouseY - anchorY;
+                    
+                    let distance = Math.min(Math.sqrt((diffX * diffX) + (diffY * diffY)), POINT_RADIUS);
+    
+                    let angle = Math.PI / 2;
+                    if (diffX != 0) angle = Math.atan(diffY / diffX);
+    
+                    position.x = anchorX - ((Math.cos(angle) * distance) * ((flipAngle) ? -1 : 1));
+                    position.y = anchorY - ((Math.sin(angle) * distance) * ((flipAngle) ? -1 : 1));
+
+                    adjustCorner = false;
+                    flipAngle = false;
+                }
+
+                return position;
+            }
+
             function onMouseMove(event)
             {
                 moveAt(event.pageX, event.pageY);
@@ -285,7 +367,6 @@ function createDropdown(path)
         path.addPoint();
     })
 
-    
 
     return dropdownMenu;
 }
