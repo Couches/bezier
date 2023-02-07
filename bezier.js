@@ -16,9 +16,11 @@ const POINT_RADIUS = 7;
 var numPoints = 0;
 var numPaths = 0;
 var pointListElements = [];
-var points = [];
+
+var pt = container.createSVGPoint();
 
 var activeDropdown;
+var selecting = false;
 
 // Point Definition
 // Contains x and y position
@@ -30,6 +32,8 @@ class Point {
         this.createSVG();
         pointList.appendChild(this.element);
         
+        makeDraggable(this);
+
         updateCounter();
     }
 
@@ -39,12 +43,12 @@ class Point {
 
     // Point Setters
     setX(x) { 
-        this.x = x;
+        this.x = clamp(x, 12, 488);
         this.update();
     }
 
     setY(y) {
-        this.y = y;
+        this.y = clamp(y, 12, 488);
         this.update();
     }
 
@@ -59,13 +63,26 @@ class Point {
     {
         this.pointSVG = createSVG('circle');
         
+        
         setAttributeList(this.pointSVG, {
             r: POINT_RADIUS,
-            fill: this.color
+            style: "fill: black",
+            id: this.element.id
         })
 
         container.appendChild(this.pointSVG);
         this.update();
+    }
+
+    updateInputValues()
+    {
+        this.element.querySelector("#input-x").value = Math.round(this.x);
+        this.element.querySelector("#input-y").value = Math.round(this.y);
+    }
+
+    getSVG()
+    {
+        return this.pointSVG;
     }
 
     update()
@@ -129,10 +146,13 @@ class Path {
         let pointInputID = document.createElement('input');
 
         pointItem.className = "path-point-item";
-        pointItem.innerText = "point: ";
+        pointItem.innerText = "point";
 
-        pointInputID.type = "text";
+        pointInputID.type = "datalist";
         pointInputID.className = "input";
+        pointInputID.addEventListener("click", () => {
+            pickPoint();
+        });
 
         pointItem.appendChild(pointInputID);
 
@@ -165,6 +185,57 @@ class Path {
     }
 }
 
+function pickPoint(pathPoint) {
+    document.addEventListener("mousedown", function(e) {
+        if (e.target.tagName == "circle") pathPoint = (e.target.id);
+    }, {once : true});
+}
+
+// Make a point draggable in the svg container
+function makeDraggable(point)
+{
+    let svg = point.getSVG();
+
+    if (!selecting)
+    {
+        svg.onmousedown = function(event)
+        {
+            let conBCR = container.getBoundingClientRect();
+    
+            moveAt(event.pageX, event.pageY);
+    
+            function moveAt(pageX, pageY)
+            {
+                point.setX(pageX - conBCR.left)
+                point.setY(pageY - conBCR.top)
+            }
+    
+            function onMouseMove(event)
+            {
+                moveAt(event.pageX, event.pageY);
+                point.updateInputValues();
+
+                document.onmouseup = function() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                }
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+    
+            svg.onmouseup = function() {
+                document.removeEventListener('mousemove', onMouseMove);
+                svg.onmouseup = null;
+            }
+        }
+    
+        svg.ondragstart = function() {
+
+            
+
+            return false;
+        }
+    }
+}
 
 // Create random number within range
 function random(min, max)
@@ -182,7 +253,7 @@ function setAttributeList(element, props)
 }
 
 // Create a remove button
-function createRemoveButton(element)
+function createRemoveButton(element, object)
 {
     let removeButton = document.createElement('button');  
 
@@ -191,6 +262,7 @@ function createRemoveButton(element)
 
     removeButton.addEventListener("click", () => {
         element.remove();
+        if (object != null) object.remove();
     })
 
     return removeButton;
@@ -306,6 +378,9 @@ function createListPoint(point)
     inputX.className = "input";
     inputY.className = "input";
 
+    inputX.id = "input-x";
+    inputY.id = "input-y"; 
+
     inputX.value = point.getX();
     inputY.value = point.getY();
 
@@ -375,6 +450,10 @@ function createPath()
 function createSVG(type)
 {
     return document.createElementNS('http://www.w3.org/2000/svg', type);
+}
+
+function clamp(num, min, max) {
+    return Math.min(Math.max(num, min), max);
 }
 
 ///////////////////// Global code /////////////////////
