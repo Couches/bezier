@@ -11,11 +11,16 @@ const pointList = document.getElementById("point-list");
 const pathList = document.getElementById("path-list");
 
 // Global Variables
-const POINT_RADIUS = 8;
+const POINT_RADIUS = 6;
+const CANVAS_WIDTH = 500;
+const CANVAS_HEIGHT = 500;
 
 var numPoints = 0;
 var numPaths = 0;
+
 var pointListElements = [];
+var points = [];
+var paths = [];
 
 var pt = container.createSVGPoint();
 
@@ -29,8 +34,11 @@ class Point {
         this.x = x;
         this.y = y;
         this.element = createListPoint(this);
+        this.id = this.element.id.charAt(5);
         this.createSVG();
+
         pointList.appendChild(this.element);
+        points.push(this);
         
         makeDraggable(this);
 
@@ -43,12 +51,12 @@ class Point {
 
     // Point Setters
     setX(x) {
-        this.x = clamp(x, 8, 492);
+        this.x = clamp(x, POINT_RADIUS, CANVAS_WIDTH - POINT_RADIUS);
         this.update();
     }
 
     setY(y) {
-        this.y = clamp(y, 8, 492);
+        this.y = clamp(y, POINT_RADIUS, CANVAS_HEIGHT - POINT_RADIUS);
         this.update();
     }
 
@@ -56,6 +64,7 @@ class Point {
     remove() {
         this.element.remove();
         this.pointSVG.remove();
+        points.splice(points.indexOf(this), 1);
         updateCounter();
     }
 
@@ -67,7 +76,8 @@ class Point {
         setAttributeList(this.pointSVG, {
             r: POINT_RADIUS,
             style: "fill: black",
-            id: this.element.id
+            id: this.element.id,
+            className: "point pickable"
         })
 
         container.appendChild(this.pointSVG);
@@ -87,6 +97,13 @@ class Point {
 
     update()
     {
+        let adjustedPosition = cornerCurve(this.x, this.y, CANVAS_WIDTH, CANVAS_HEIGHT, 16);
+
+        this.x = adjustedPosition.x;
+        this.y = adjustedPosition.y;
+
+        this.updateInputValues();
+
         setAttributeList(this.pointSVG, {
             cx: this.x,
             cy: this.y,
@@ -97,6 +114,61 @@ class Point {
     toString() { return `{x: ${this.x}, y: ${this.y}}` }
 }
 
+class PathPoint {
+    constructor(inputButton, path)
+    {
+        this.pointID = null;
+        this.point = null;
+        this.inputButton = inputButton;
+        this.path = path;
+    }
+
+    setPointID(pointID)
+    {
+        this.pointID = pointID;
+        
+        if (this.pointID == null)
+        {
+            this.inputButton.innerText = "?";
+            this.point = null;
+        }
+        else
+        {
+            let pointIndex = points.map(function(e) { return e.id; }).indexOf(this.pointID);
+            this.point = points[pointIndex];
+            this.inputButton.innerText = pointID;
+        }
+
+        this.path.update();
+    }
+
+    getPointID()
+    {
+        return this.pointID;
+    }
+
+    getPoint()
+    {
+        return this.point;
+    }
+
+    select()
+    {
+        this.inputButton.classList.add("selected");
+    }
+
+    deselect()
+    {
+        this.inputButton.classList.remove("selected");
+    }
+
+    toString()
+    {
+        if (this.getPoint() != null) return this.point.getX() + " " + this.point.getY();
+        return "";
+    }
+}
+
 // Path Definition
 // Contains list of points to draw curves
 class Path {
@@ -105,24 +177,31 @@ class Path {
         this.pathPoints = [];
         this.element = createListPath(this);
         this.listElement = document.createElement('div');
+        this.pathSVG = createSVG('path');
+
+        container.appendChild(this.pathSVG);
         pathList.appendChild(this.element);
+        paths.push(this);
 
         updateCounter();
     }
 
-    addPoint(point) {
-        //this.pathPoints.push(point);
-
-        this.createPointItem();
+    addPoint(pathPoint) {
+        this.pathPoints.push(pathPoint);
+        this.update();
     }
 
     removePoint(point) {
         this.pathPoints.splice(this.pathPoints.indexOf(point), 1);
+        this.update();
     }
 
     remove()
     {
+        this.pathSVG.remove();
         this.element.remove();
+        paths.splice(paths.indexOf(this), 1);
+
         updateCounter();
     }
 
@@ -143,23 +222,29 @@ class Path {
     createPointItem()
     {
         let pointItem = document.createElement('div');
-        let pointInputID = document.createElement('input');
+        let pointInputID = document.createElement('button');
+        let pathPoint = new PathPoint(pointInputID, this);
+
 
         pointItem.className = "path-point-item";
+        pointItem.id = this.listElement.childElementCount;
         pointItem.innerText = "point";
 
         pointInputID.type = "datalist";
-        pointInputID.className = "input";
+        pointInputID.className = "pick-point input";
+        pointInputID.innerText = "?";
+
         pointInputID.addEventListener("click", () => {
-            pickPoint();
+            pickPoint(pathPoint);
         });
 
         pointItem.appendChild(pointInputID);
 
-        pointItem.appendChild(createRemoveButton(pointItem));
+        pointItem.appendChild(createRemoveButton(pointItem, this, pathPoint));
 
         this.listElement.appendChild(pointItem);
 
+        this.addPoint(pathPoint);
     }
 
     getPoints()
@@ -183,11 +268,45 @@ class Path {
 
         return string;
     }
+
+    generatePath()
+    {
+        let path = "";
+
+        for (let i = 0; i < this.pathPoints.length; i++)
+        {
+            let pathPoint = this.pathPoints[i];
+            if (pathPoint.getPoint() != null)
+            {
+                path += pathPoint.toString() + " ";
+            }
+                
+        }
+
+        if (path.split(" ").length >= 4) return "M " + path;
+        return "";
+    }
+
+    update()
+    {
+        setAttributeList(this.pathSVG, {
+            d: this.generatePath(),
+            stroke: "black",
+            fill: "transparent"
+        });
+    }
 }
 
+
+
 function pickPoint(pathPoint) {
+    pathPoint.select();
+
     document.addEventListener("mousedown", function(e) {
-        if (e.target.tagName == "circle") console.log(e.target.id);
+        if (e.target.tagName == "circle") pathPoint.setPointID(e.target.id.charAt(5));
+        else pathPoint.setPointID("?");
+
+        pathPoint.deselect();
     }, {once : true});
 }
 
@@ -212,84 +331,12 @@ function makeDraggable(point)
                 let posX = mouseX;
                 let posY = mouseY;
 
-                let adjustedPos = cornerCurve(mouseX, mouseY, 500, 500, 16);
+                let adjustedPos = cornerCurve(mouseX, mouseY, CANVAS_WIDTH, CANVAS_HEIGHT, 16);
                 
                 point.setX(adjustedPos.x);
                 point.setY(adjustedPos.y);
-            }
-    
-            function cornerCurve(mouseX, mouseY, width, height, cornerRadius)
-            {
 
-                let position = {
-                    x: mouseX,
-                    y: mouseY
-                };
-
-                let posX = clamp(mouseX, 0, width);
-                let posY = clamp(mouseY, 0, height);
-
-                let anchorX;
-                let anchorY;
-
-                let adjustCorner = false;
-                let flipAngle = false;
-
-                // Set anchors
-                {
-                    if (posX <= cornerRadius && posY <= cornerRadius)
-                    {
-                        anchorX = cornerRadius;
-                        anchorY = cornerRadius;
-
-                        adjustCorner = true;
-                    }
-
-                    if (posX <= cornerRadius && posY >= height - cornerRadius)
-                    {
-                        anchorX = cornerRadius;
-                        anchorY = height - cornerRadius;
-
-                        adjustCorner = true;
-                    }
-
-                    if (posX >= width - cornerRadius && posY >= height - cornerRadius)
-                    {
-                        anchorX = width - cornerRadius;
-                        anchorY = height - cornerRadius;
-
-                        adjustCorner = true;
-                        flipAngle = true;
-                    }
-
-                    if (posX >= width - cornerRadius && posY <= cornerRadius)
-                    {
-                        anchorX = width - cornerRadius;
-                        anchorY = cornerRadius;
-
-                        adjustCorner = true;
-                        flipAngle = true;
-                    }
-                }
-
-                if (adjustCorner)
-                {
-                    let diffX = mouseX - anchorX;
-                    let diffY = mouseY - anchorY;
-                    
-                    let distance = Math.min(Math.sqrt((diffX * diffX) + (diffY * diffY)), POINT_RADIUS);
-    
-                    let angle = Math.PI / 2;
-                    if (diffX != 0) angle = Math.atan(diffY / diffX);
-    
-                    position.x = anchorX - ((Math.cos(angle) * distance) * ((flipAngle) ? -1 : 1));
-                    position.y = anchorY - ((Math.sin(angle) * distance) * ((flipAngle) ? -1 : 1));
-
-                    adjustCorner = false;
-                    flipAngle = false;
-                }
-
-                return position;
+                updatePaths();
             }
 
             function onMouseMove(event)
@@ -319,6 +366,63 @@ function makeDraggable(point)
     }
 }
 
+function cornerCurve(mouseX, mouseY, width, height, cornerRadius)
+{
+    let position = {
+        x: mouseX,
+        y: mouseY
+    };
+    let posX = clamp(mouseX, 0, width);
+    let posY = clamp(mouseY, 0, height);
+    let anchorX;
+    let anchorY;
+    let adjustCorner = false;
+    let flipAngle = false;
+    // Set anchors
+    {
+        if (posX <= cornerRadius && posY <= cornerRadius)
+        {
+            anchorX = cornerRadius;
+            anchorY = cornerRadius;
+            adjustCorner = true;
+        }
+        if (posX <= cornerRadius && posY >= height - cornerRadius)
+        {
+            anchorX = cornerRadius;
+            anchorY = height - cornerRadius;
+            adjustCorner = true;
+        }
+        if (posX >= width - cornerRadius && posY >= height - cornerRadius)
+        {
+            anchorX = width - cornerRadius;
+            anchorY = height - cornerRadius;
+            adjustCorner = true;
+            flipAngle = true;
+        }
+        if (posX >= width - cornerRadius && posY <= cornerRadius)
+        {
+            anchorX = width - cornerRadius;
+            anchorY = cornerRadius;
+            adjustCorner = true;
+            flipAngle = true;
+        }
+    }
+    if (adjustCorner)
+    {
+        let diffX = clamp(mouseX, 0, width) - anchorX;
+        let diffY = clamp(mouseY, 0, height) - anchorY;
+        
+        let distance = Math.min(Math.sqrt((diffX * diffX) + (diffY * diffY)), cornerRadius - POINT_RADIUS)
+        let angle = Math.PI / 2;
+        if (diffX != 0) angle = Math.atan(diffY / diffX)
+        position.x = anchorX - ((Math.cos(angle) * distance) * ((flipAngle) ? -1 : 1));
+        position.y = anchorY - ((Math.sin(angle) * distance) * ((flipAngle) ? -1 : 1));
+        adjustCorner = false;
+        flipAngle = false;
+    }
+    return position;
+}
+
 // Create random number within range
 function random(min, max)
 {
@@ -335,7 +439,7 @@ function setAttributeList(element, props)
 }
 
 // Create a remove button
-function createRemoveButton(element, object)
+function createRemoveButton(element, path, pathPoint)
 {
     let removeButton = document.createElement('button');  
 
@@ -343,8 +447,12 @@ function createRemoveButton(element, object)
     removeButton.className = "remove-button";
 
     removeButton.addEventListener("click", () => {
+        if (path != null)
+        {
+            path.removePoint(pathPoint);
+        } 
         element.remove();
-        if (object != null) object.remove();
+        
     })
 
     return removeButton;
@@ -364,7 +472,7 @@ function createDropdown(path)
     dropdownMenu.appendChild(path.getListElement());
 
     addPointButton.addEventListener("click", () => {
-        path.addPoint();
+        path.createPointItem();
     })
 
 
@@ -468,12 +576,10 @@ function createListPoint(point)
     // Add event listeners to item components
     inputX.addEventListener("change", () => {
         point.setX(inputX.value);
-        console.log(point.getX());
     })
 
     inputY.addEventListener("change", () => {
         point.setY(inputY.value)
-        console.log(point.getY());
     })
 
 
@@ -535,6 +641,14 @@ function createSVG(type)
 
 function clamp(num, min, max) {
     return Math.min(Math.max(num, min), max);
+}
+
+function updatePaths()
+{
+    for (let i = 0; i < paths.length; i++)
+    {
+        paths[i].update();
+    }
 }
 
 ///////////////////// Global code /////////////////////
